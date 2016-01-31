@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js lt-ie10 lt-ie9 lt-ie8 lt-ie7" lang="en-us"> <![endif]-->
+<!--[if IE 7]> <html class="no-js lt-ie10 lt-ie9 lt-ie8" lang="en-us"> <![endif]-->
+<!--[if IE 8]> <html class="no-js lt-ie10 lt-ie9" lang="en-us"> <![endif]-->
+<!--[if IE 9]> <html class="no-js lt-ie10 lt-ie9" lang="en-us"> <![endif]-->
+<!--[if lt IE 10]> <html class="no-js lt-ie10" lang="en-us"> <![endif]-->
+<!--[if !IE]> > <![endif]-->
+<html class='no-js' lang='en'>
+<!-- <![endif] -->
+<head>
+<title>Don’t user Devise - Sinan Guclu</title>
+<meta charset='utf-8' content='text/html' http-equiv='content-type'>
+<meta content='ie=edge,chrome=1' http-equiv='x-ua-compatible'>
+<meta content='On this webpage you will find information about the Mixtable journey' name='description'>
+<meta content='Sinan Guclu' name='author'>
+<meta content='initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width' name='viewport'>
+<meta content='initial-scale=1.0,user-scalable=no,maximum-scale=1' media='(device-height: 568px)' name='viewport'>
+<meta content='yes' name='apple-mobile-web-app-capable'>
+<meta content='black-translucent' name='apple-mobile-web-app-status-bar-style'>
+<link href='/favicon.ico' rel='shortcut icon'>
+<link href='/favicon.png' rel='shortcut icon'>
+<link href='/images/apple-touch-icon-precomposed.png' rel='apple-touch-icon-precomposed'>
+<link href='/images/apple-touch-icon-57x57-precomposed.png' rel='apple-touch-icon-precomposed' sizes='57x57'>
+<link href='/images/apple-touch-icon-72x72-precomposed.png' rel='apple-touch-icon-precomposed' sizes='72x72'>
+<link href='/images/apple-touch-icon-114x114-precomposed.png' rel='apple-touch-icon-precomposed' sizes='114x114'>
+<link href='//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet'>
+<link href='http://fonts.googleapis.com/css?family=Yellowtail|Nothing+You+Could+Do|Pacifico|Satisfy|Handlee' rel='stylesheet' type='text/css'>
+<link href="stylesheets/application.css" rel="stylesheet" type="text/css" />
+</head>
+<body class='page'>
+<nav class='topnav'>
+<div class='links' id='left'>
+<a>
+about
+</a>
+</div>
+<div class='logo'>
+<a href="/"><img src="images/logo_no_text.png" />
+</a></div>
+<div class='links' id='right'>
+<a>
+contact
+</a>
+</div>
+<div class='hiddenContainer container-fluid'>
+<div id='about'>
+<h3 class='posh'>
+We want to share...
+</h3>
+<p>
+...our learnings with you. Mixtable was a Munich based startup built up and run from April 2013 until August 2014. Our mission was to bring people together offline! On this webpage you will find information about our story and who shaped the Mixtable journey. In addition we collected some of our learnings regarding business and technical insights. Don’t be shy and send us an email if you have questions or other suggestions.
+</p>
+</div>
+<div id='contact'>
+<br>
+<p>
+<img id="buisness_icon" src="images/mail_icon.png" />
+</p>
+<br>
+<p>
+<a href='mailto:team@mixtable.com'>
+team@mixtable.com
+</a>
+</p>
+<p>
+or reach individual
+<a href="/team_mixtable.html">team</a>
+members.
+</p>
+</div>
+</div>
+</nav>
+<div class='author'>
+<strong class='author-content'></strong>
+</div>
+<div class='post'>
+<div class='postHead'>
+<img id="data_icon" src="images/data_icon.png" />
+<h3>
+Don't use devise
+</h3>
+<p>
+Adding a second type of authentication to our web app was a lot easier without using Devise, the rails authentication method :has_secure_password? is breifly explored.
+</p>
+</div>
+<div class='postBody'>
+<p>
+Running Mixtable, we found a sticking point that deterred some potential customers from signing up to the service, Facebook authentication. To remedy this we embarked on adding email/password authentication to web app. The site was already configured with the omniauth gem to provide facebook authentication.
+</p>
+<p>
+Initially I looked into Devise to handle both oAuth and password auth concurrently. Devise is a heavy gem and takes a lot of control over how you handle your user records. In return it gives you everything you need for password authentication like password reset links etc. Trying to integrate Devise resulted in a mess. It would have taken a lot longer to modify our database to play nicely with Devise. We had very tight release schedules at Mixtable and wanted to get mvp’s of new features deployed quickly so we could start getting feedback. Plus I was learning Ruby on Rails at the time, and found this from a Stack Overflow answer: ‘You will learn a lot of good things from it <i>[proprietory auth]</i>, and using Devise will cause you to miss a lot of great information.’ Which after the pain in the arse Devise was, sold me.
+</p>
+<p>
+Since we had email verification and session management already setup without using devise, configuring
+<a href="http://api.rubyonrails.org/classes/ActiveModel/SecurePassword/ClassMethods.html">:has_secure_password</a>
+was sufficient. This is a cool Rails method which makes building password authentications a doddle. It basically takes the cryptic bit out of it, and who wants to mess around with that?
+<a href="http://www.millwoodonline.co.uk/blog/using-hassecurepassword-for-rails-authentication">This</a>
+tutorial is great at describing it's basic implementation.
+</p>
+<p>
+To differentiate between Facebook auth and password auth users, an 'fb_user?' column was added to our Users table. All users Facebook data was stored in a Facebook Data table, with duplicates of the data we used in a User Profiles table. Non Facebook users didn't have the entry in the Facebook Data table. The has_secure_password method has automated validations, since Facebook users didn't need these validations, the automated password validations were disabled and handled with conditional validations.
+</p>
+<p>
+Devise also handles logging users in and out, this is handled with Omniauth in our Session's controller. For the password authentication a form_for was added into a partial which could be dropped in any where on the site that required a log in box.
+</p>
+<p>
+We implemented a helper method to handle session variables called
+<a href="https://gist.github.com/Driptap/e053593eeca829fd9e33">current user. </a>
+The most useful method being the signin:
+</p>
+<p>
+This is called from either the Omniauth call back or password authenticator method. It can also be called from other controllers to allow users to log into their user areas from email links. So for a password recovery email for example. Has_secure_password and the current_user.rb helper made a very satisfying replacement for devise. They provided a lot more flexibility which we needed for the speed at which the web app changed.
+</p>
+<h5 class='right-txt grey-txt'>
+Sinan Guclu
+</h5>
+<p>
+<p class='share'>
+<a class='twitter-share-button' data-via='mixtable' href='https://twitter.com/share'>Tweet</a>
+<script>
+  !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+</script>
+</p>
+<p class='share'>
+<script src='//platform.linkedin.com/in.js' type='text/javascript'></script>
+<![CDATA[
+    lang: en_US
+]]>
+<script data-counter='right' type='IN/Share'></script>
+</p>
+</p>
+</div>
+</div>
+
+<footer>
+<div class='welcome container-fluid impressumContainer'>
+<div class='row'>
+<div class='col-xs-12'>
+<a href="/impressum.html">impressum</a>
+</div>
+</div>
+</div>
+</footer>
+<script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js" type="text/javascript"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js" type="text/javascript"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js" type="text/javascript"></script>
+<script src="javascripts/application.js" type="text/javascript"></script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  
+  ga('create', 'UA-47225726-3', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
